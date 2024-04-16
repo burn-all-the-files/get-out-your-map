@@ -1,0 +1,141 @@
+-- This PostgresSQL code is part of the capstone for the Google Data Analytics Professional Certificate.
+-- Business task: Are there any trends in smartwatch use that can help guide marketing strategy?
+-- The Dataset I analyzed was from: https://www.kaggle.com/datasets/arashnic/fitbit
+
+-- About the dataset: Two separate months' worth of data; thirty-five participants; about fifteen different categories of measurements.
+
+-- For PostgresSQL, create the daily_activity table. This contains information about daily activity, total distance and total steps taken, and categorical data about the intensity level of the data.
+
+CREATE TABLE daily_activity (
+	Id BIGINT,
+	Activity_Date DATE,
+	Total_Steps INT,
+	Total_Distance NUMERIC,
+	Tracker_Distance NUMERIC,
+	Logged_Activities NUMERIC,
+	Very_Active_Distance NUMERIC,
+	Moderately_Active_Distance NUMERIC,
+	Light_Active_Distance NUMERIC,
+	Sedentary_Active_Distance NUMERIC,
+	Very_Active_minutes INT,
+	Fairly_Active_Minutes INT,
+	Lightly_Active_Minutes INT,
+	Sedentary_Minutes INT,
+	Calories INT
+);
+
+-- Then, import the dailyActivity.csv datasets into the table. I included both months, from March to April and April to May. 
+-- Note: This was possible because each CSV file contained the same column names.
+-- To preview this dataset:
+
+SELECT *
+FROM daily_activity
+ORDER BY id DESC;
+
+-- Now that we have the entire dataset uploaded, we need to clean it.
+-- Let's see if there are any rows of data that seem too high or too low.
+
+-- Let's look at the step counter first.
+
+SELECT *
+FROM daily_activity
+ORDER BY Total_Steps;
+
+-- We can see that there are about 138 rows where total steps was logged as 0 for the whole day. That's about 10% of the data. If we look at the rest of the columns, we see that most of the other values in these 0-step rows is also 0.
+
+-- The only columns that aren't zero are the sedentary minutes, which starts at 1440 -- the number of minutes in a day, and calories. The values in the calories column are often duplicates -- I won't be analyzing this column.
+-- Let's look more closely at the sedentary minutes column. This is a way to measure non-activity, and it completes the timeline of the day (sedentary + non-sedentary). It answers the question, are people wearing their smartwatch for the whole day?
+
+SELECT *
+FROM daily_activity
+ORDER BY sedentary_minutes DESC;
+
+-- There's 142 rows with a value of 1440, the number of minutes in a day.
+
+-- Let's look at very active minutes.
+
+SELECT *
+FROM daily_activity
+ORDER BY very_active_minutes;
+
+-- Of note, nearly half of the rows have "very active minutes" as a value of zero. This suggests that people aren't as active as often as they should be.
+
+-- So, let's make a new table with these new filters in mind.
+-- Our new table will exclude rows where steps taken a day was less than 50 and will exclude rows where the sedentary minutes is greater than 23 hours and 30 minutes.
+
+CREATE TEMP TABLE daily_filtered AS
+SELECT *
+FROM  daily_activity
+WHERE total_steps > 50 and
+	sedentary_minutes <1410;
+
+-- And let's preview the new table:
+
+SELECT *
+FROM daily_filtered
+
+-- Changing gears now. I want to know, how frequently do smartwatch users do lightly active vs fairly active vs very active activities?
+-- I also want to know, how many steps does a smartwatch user take each day?
+
+-- Let's filter our filtered table for these values:
+
+SELECT id, total_steps,very_active_minutes, fairly_active_minutes,lightly_active_minutes,sedentary_minutes
+FROM daily_filtered
+ORDER BY sedentary_minutes;
+
+-- I want to do some calculations with this data.
+-- This is a table that groups together each user's data together. The number of minutes of activity is summed.
+
+SELECT id, count(*),
+	sum(total_steps) AS steps_sum,
+	sum(very_active_minutes) AS very_active_sum,
+	sum(fairly_active_minutes) AS fairly_active_sum,
+	sum(lightly_active_minutes) AS lightly_active_sum,
+	sum(sedentary_minutes) AS sedentary_sum
+FROM daily_filtered
+GROUP BY id;
+
+-- I exported this data into Google Sheets so I could do some calculations.
+-- To get the average "active minutes per day", divide "very_active_sum" with "count" (which is the number of unique days that data was logged for each unique id).
+-- Repeat to get "fairly active minutes per day" and "lightly active minutes per day." Also, add a column for "steps per day".
+
+-- Now, we should have a table with columns for very active, fairly active, and lightly active minutes per day.
+-- To make a box-and-whisker plot in Sheets, be sure to make a table that includes: minimum, lower quartile, median, upper quartile, and maximum values.
+-- Make a separate table to make a box-and-whisker plot for average number of steps per day.
+
+-- Switching gears again. I want to know, what time of day are people most active?
+-- To visualize this in Tableau, I want a separate table:
+
+CREATE TABLE hourly_intensity (
+	Id BIGINT,
+	Activity_Hour TIMESTAMP,
+	Total_Intensity INT,
+	Average_Intensity NUMERIC
+);
+
+-- The data that we are importing into this table is different from the data we imported in the activities table.
+-- Import the hourlyIntensities.csv data from both folders.
+
+-- To preview in PostgresSQL:
+SELECT *
+FROM hourly_intensity
+
+-- We need to prepare this data for visualization. Let's filter out some of the zero-intensity values:
+
+SELECT id, activity_hour, total_intensity
+FROM hourly_intensity
+WHERE total_intensity>0
+
+-- That cuts out half of the rows. We can now import this filtered data into Tableau and visualize it.
+
+-- I didn't end up needing this code, but if I wanted to split the timestamps:
+SELECT
+	id,
+	cast(to_char(hourly_intensity.activity_hour, 'YYYY-MM-DD') as date) as "Date" ,
+	cast(to_char(hourly_intensity.activity_hour, 'HH24:MI:SS') as time) as "Time" ,
+	total_intensity,
+	average_intensity
+FROM hourly_intensity
+
+-- That's all. To view the Google Slides presentation, go here: https://docs.google.com/presentation/d/1bXDSLYICRJgQbqhS5tqBV1hFyaOEefy1L77Efo6nX1w/edit?usp=sharing
+-- Thanks for reading!
