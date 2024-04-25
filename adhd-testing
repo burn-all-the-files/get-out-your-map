@@ -1,0 +1,207 @@
+-- This is a self-guided project for educational purposes only. I will be using PostgreSQL and RStudio, both free-to-download.
+-- Please don't laugh at my code. I'm new to coding and to data analysis!!
+
+-- I was browsing datasets for ADHD and came across this one: https://osf.io/3agwr/
+-- I wondered. Which is more accurate at diagnosing ADHD: the Conner's Continuous Performance Test (CPT-II) or a trained diagnostician?
+
+-- Goal 1: Join the cpt_ii_connerscontinuousperformancetest table and the patient_info table.
+-- Why? The cptii table has info about cptii results, and the patient_info table contains information about the trained diagnosticians' assessments of the group of subjects.
+-- First of all, the cptii table contained way too many columns and proved difficult to upload into PostgreSQL.
+-- My workaround was as follows: Import the cpt_ii_conners table into RStudio, take out whatever I don't need, and then upload that into PostgreSQL.
+-- The R scripts look like this:
+
+```{r}
+results_cptii_conners <-
+  CPT_II_ConnersContinuousPerformanceTest %>%
+    select(-(2:725))
+
+View(results_cptii_conners)
+
+colnames(results_cptii_conners)
+
+write.csv(results_cptii_conners,"results_cptii")
+```
+
+-- We can use those column names for our PostgreSQL table:
+
+CREATE TABLE results_cptii ( 
+	X INT, 
+	ID INT, 
+	General_TScore_Omissions NUMERIC, 
+	Adhd_TScore_Omissions NUMERIC, 
+	Neuro_TScore_Omissions NUMERIC, 
+	Raw_Score_Omissions INT, 
+	Percent_Omissions NUMERIC, 
+	General_TScore_Commissions NUMERIC, 
+	Adhd_TScore_Commissions NUMERIC, 
+	Neuro_TScore_Commissions NUMERIC, 
+	Raw_Score_Commissions INT, 
+	Percent_Commissions NUMERIC, 
+	General_TScore_HitRT NUMERIC, 
+	Adhd_TScore_HitRT NUMERIC, 
+	Neuro_TScore_HitRT NUMERIC, 
+	Raw_Score_HitRT NUMERIC, 
+	Percent_HitRT NUMERIC, 
+	General_TScore_HitSE NUMERIC, 
+	Adhd_TScore_HitSE NUMERIC, 
+	Neuro_TScore_HitSE NUMERIC, 
+	Raw_Score_HitSE NUMERIC, 
+	Percent_HitSE NUMERIC, 
+	General_TScore_VarSE NUMERIC, 
+	Adhd_TScore_VarSE NUMERIC, 
+	Neuro_TScore_VarSE NUMERIC, 
+	Raw_Score_VarSE NUMERIC, 
+	Percent_VarSE NUMERIC, 
+	General_TScore_DPrime NUMERIC, 
+	Adhd_TScore_DPrime NUMERIC, 
+	Neuro_TScore_DPrime NUMERIC, 
+	Raw_Score_DPrime NUMERIC, 
+	General_TScore_Beta NUMERIC, 
+	Adhd_TScore_Beta NUMERIC, 
+	Neuro_TScore_Beta NUMERIC, 
+	Raw_Score_Beta NUMERIC, 
+	General_TScore_Perseverations NUMERIC, 
+	Adhd_TScore_Perseverations NUMERIC, 
+	Neuro_TScore_Perseverations NUMERIC, 
+	Raw_Score_Perseverations NUMERIC, 
+	Percent_Perseverations NUMERIC, 
+	General_TScore_HitRTBlock NUMERIC, 
+	Adhd_TScore_HitRTBlock NUMERIC, 
+	Neuro_TScore_HitRTBlock NUMERIC, 
+	Raw_Score_HitRTBlock NUMERIC, 
+	Percent_HitRTBlock NUMERIC, 
+	General_TScore_HitSEBlock NUMERIC, 
+	Adhd_TScore_HitSEBlock NUMERIC, 
+	Neuro_TScore_HitSEBlock NUMERIC, 
+	Raw_Score_HitSEBlock NUMERIC, 
+	Percent_HitSEBlock NUMERIC, 
+	General_TScore_HitRTIsi NUMERIC, 
+	Adhd_TScore_HitRTIsi NUMERIC, 
+	Neuro_TScore_HitRTIsi NUMERIC, 
+	Raw_Score_HitRTIsi NUMERIC, 
+	Percent_HitRTIsi NUMERIC, 
+	General_TScore_HitSEIsi NUMERIC, 
+	Adhd_TScore_HitSEIsi NUMERIC, 
+	Neuro_TScore_HitSEIsi NUMERIC, 
+	Raw_Score_HitSEIsi NUMERIC, 
+	Percent_HitSEIsi NUMERIC, 
+	Adhd_Confidence_Index NUMERIC, 
+	Neuro_Confidence_Index NUMERIC, 
+	Old_Overall_Index NUMERIC 
+); 
+
+-- Import the values. Then we can preview:
+
+SELECT *
+FROM results_cptii
+
+-- The first row is not needed and is confusing, so let's remove it.
+
+ALTER TABLE results_cptii
+DROP COLUMN x;
+
+-- Preview the table:
+
+SELECT *
+FROM results_cptii
+
+-- I want to join this table with the other table.
+-- Here's the other table:
+
+CREATE TABLE patient_info(
+	ID INT,
+	SEX INT,
+	AGE INT,
+	ACC INT,
+	ACC_TIME TIME,
+	ACC_DAYS NUMERIC,
+	HRV INT,
+	HRV_TIME TIME,
+	HRV_HOURS INT,
+	CPT_II INT,
+	ADHD INT,
+	ADD INT,
+	BIPOLAR INT,
+	UNIPOLAR INT,
+	ANXIETY INT,
+	SUBSTANCE INT,
+	OTHER INT,
+	CT INT,
+	MDQ_POS INT,
+	WURS INT,
+	ASRS INT,
+	MADRS INT,
+	HADS_A INT,
+	HADS_D INT,
+	MED INT,
+	MED_Antidepr INT,
+	MED_Moodstab INT,
+	MED_Antipsych INT,
+	MED_Anxiety_Benzo INT,
+	MED_Sleep INT,
+	MED_Analgesics_Opioids INT,
+	MED_Stimulants INT,
+	filter INT
+);
+
+-- I had trouble uploading this dataset into PostGresSQL. I had to first upload it into a spreadsheet, and then export it into a CSV again.
+-- Import the other dataset. To preview:
+
+SELECT *
+FROM patient_info
+
+-- Now, I want to JOIN the datasets.
+
+SELECT *
+FROM results_cptii
+FULL OUTER JOIN patient_info 
+ON results_cptii.id = patient_info.id
+
+-- From this outer join, we can wee that there are four IDs that don't match: 10, 78, 50, and 1.
+-- I want just matching IDs. Let's do an inner join instead:
+
+SELECT *
+FROM results_cptii
+INNER JOIN patient_info 
+ON results_cptii.id = patient_info.id
+
+-- Since both of the tables have an "id" column and that's my primary key, I can also join the two tables with a USING syntax instead:
+
+SELECT *
+FROM results_cptii
+INNER JOIN patient_info USING (id)
+
+-- Goal 2: Prepare a table using the columns that I want to analyze.
+-- To make the query shorter, I used table aliases, r and p.
+-- Query this into the PostgreSQL:
+
+SELECT 
+	r.id,
+	r.general_tscore_dprime AS detectability,
+	r.general_tscore_omissions AS missed_targets,
+	r.general_tscore_commissions AS incorrect_nontarget,
+	r.general_tscore_hitrt AS hit_rxn_speed,
+	r.general_tscore_hitse AS hit_rxn_speed_consistency,
+	r.general_tscore_varse AS variability_consistency,
+	r.general_tscore_perseverations AS impulsive_random_response,
+	r.general_tscore_hitrtblock AS sustained_attention_byblock,
+	r.general_tscore_hitseblock AS sustained_attention_consistency,
+	r.general_tscore_hitrtisi AS hit_rxn_interval,
+	r.general_tscore_hitseisi AS hit_rxn_consistency,
+	r.adhd_confidence_index,
+	p.WURS AS self_rated_adhd_wurs,
+	p.ASRS AS self_rated_adhd_asrs,
+	p.adhd AS interview_adhd,
+	p.add AS interview_inattentive,
+	p.bipolar AS interview_bipolar,
+	p.unipolar AS interview_depression,
+	p.anxiety AS interview_anxiety,
+	p.substance AS interview_substance,
+	p.other AS interview_other
+FROM results_cptii r
+INNER JOIN patient_info p USING (id)
+ORDER BY ID;
+
+-- I tried to group the columns together carefully and rename them so they make a little more sense.
+
+-- Download this csv file and then upload it into RStudio. Make sure that when you are importing it into RStudio, set the NA string to "NULL."
