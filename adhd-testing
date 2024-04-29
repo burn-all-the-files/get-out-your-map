@@ -1,7 +1,7 @@
 -- This is a self-guided project for educational purposes only. I will be using PostgreSQL and RStudio, both free-to-download.
 -- Please don't laugh at my code. I'm new to coding and to data analysis!!
 
--- I was browsing datasets for ADHD and came across this one: https://osf.io/3agwr/
+-- I was browsing datasets for ADHD and came across this one: https://osf.io/3agwr/ or alternate link: https://www.kaggle.com/datasets/arashnic/adhd-diagnosis-data
 -- I wondered. Which is more accurate at diagnosing ADHD: the Conner's Continuous Performance Test (CPT-II) or a trained diagnostician?
 
 -- Goal 1: Join the cpt_ii_connerscontinuousperformancetest table and the patient_info table.
