@@ -1,0 +1,175 @@
+---
+title: "ADHD Hyperaktiv - Data Visualization"
+author: "Ben Moy"
+date: "2024-04-25"
+output:
+  html_document: default
+---
+
+# Intro
+
+This is a self-guided project for learning purposes only. The dataset analyzed can be found here: https://www.kaggle.com/datasets/arashnic/adhd-diagnosis-data
+
+And I prepped the data here: https://github.com/burn-all-the-files/get-out-your-map/blob/main/adhd-testing
+
+Now, we are going to visualize the data to determine whether the Conners Continuous Performance Test (CPT-II) can accurately detect or rule out attention-deficit/hyperactivity disorder (ADHD). We will be comparing the CPT-II to self-rated scales of ADHD and with the results of the Mini International Neuropsychiatric Interview (MINI), conducted by two trained clinicians.
+
+# Load packages
+
+
+```{r loadpkg}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+# Import data
+
+```{r load dataset}
+joined_cptmini <- read_csv("joined_cptmini.csv")
+```
+
+
+# Visualize the data
+
+Let's try plotting the two self-rated ADHD scales, the Wender Utah Rating Scale (WURS) and the Adult ADHD Self-Report Scale (ASRS):
+
+```{r selfrated, echo=FALSE}
+joined_cptmini$self_rated_adhd_asrs <- as.numeric(joined_cptmini$self_rated_adhd_asrs)
+joined_cptmini$self_rated_adhd_wurs <- as.numeric(joined_cptmini$self_rated_adhd_wurs)
+
+ggplot(data=joined_cptmini) + geom_point(mapping = aes(x=self_rated_adhd_wurs, y=self_rated_adhd_asrs))
+```
+
+It looks like the two self-reported scales are slightly correlated. This makes sense; because the answers are self-reported, and because the tests both try to detect ADHD, the results are consistent with one another.
+
+What if we want to calculate the correlation coefficient between these two variables?
+Don't forget the "use" argument because there are some missing values in our data. 
+
+```{r correlation, echo=FALSE}
+joined_cptmini$self_rated_adhd_asrs <- as.numeric(joined_cptmini$self_rated_adhd_asrs)
+joined_cptmini$self_rated_adhd_wurs <- as.numeric(joined_cptmini$self_rated_adhd_wurs)
+
+
+cor(joined_cptmini$self_rated_adhd_asrs, joined_cptmini$self_rated_adhd_wurs, use="complete.obs")
+```
+What's the relation between a self-rated scale and the CPT-II? We will use the ADHD Confidence Index from the CPT-II results as a measure for the CPT-II.
+
+```{r cptvself, echo=FALSE}
+joined_cptmini$adhd_confidence_index <- as.numeric(joined_cptmini$adhd_confidence_index)
+joined_cptmini$self_rated_adhd_wurs <- as.numeric(joined_cptmini$self_rated_adhd_wurs)
+
+ggplot(data=joined_cptmini) + geom_point(mapping = aes(x=self_rated_adhd_wurs, y=adhd_confidence_index))
+```
+
+It doesn't look like there is much of a correlation. What's the correlation coefficient between these two measures?
+
+```{r corrl2, echo=FALSE}
+joined_cptmini$adhd_confidence_index <- as.numeric(joined_cptmini$adhd_confidence_index)
+joined_cptmini$self_rated_adhd_wurs <- as.numeric(joined_cptmini$self_rated_adhd_wurs)
+
+
+cor(joined_cptmini$self_rated_adhd_wurs, joined_cptmini$adhd_confidence_index, use="complete.obs")
+```
+So, either the CPT-II test isn't very reliable, or a self-rated ADHD test isn't very reliable, or both.
+
+The other self-rated scale ASRS has similar results:
+
+```{r asrscor, echo=FALSE}
+joined_cptmini$adhd_confidence_index <- as.numeric(joined_cptmini$adhd_confidence_index)
+joined_cptmini$self_rated_adhd_asrs <- as.numeric(joined_cptmini$self_rated_adhd_wurs)
+
+
+ggplot(data=joined_cptmini) + geom_point(mapping = aes(x=self_rated_adhd_asrs, y=adhd_confidence_index))
+
+cor(joined_cptmini$self_rated_adhd_asrs, joined_cptmini$adhd_confidence_index, use="complete.obs")
+```
+
+
+# Compare with clinicians' MINI Interview
+
+Now, let's add the clinicians' MINI Interview to the previous visualization.
+
+Here's a helpful website for ggplot that I used for this part:
+http://www.sthda.com/english/wiki/ggplot2-colors-how-to-change-colors-automatically-and-manually
+
+First, we need to convert the interview_adhd column to a factor variable. Then, we'll use the same self-rated vs adhd confidence index plot as previously used, but color the dots based on the clinician's assessment.
+
+```{r mini, echo=FALSE}
+joined_cptmini$interview_adhd <- as.factor(joined_cptmini$interview_adhd)
+joined_cptmini$adhd_confidence_index <- as.numeric(joined_cptmini$adhd_confidence_index)
+joined_cptmini$self_rated_adhd_wurs <- as.numeric(joined_cptmini$self_rated_adhd_wurs)
+
+mini <- ggplot(joined_cptmini, aes(x=self_rated_adhd_wurs, y=adhd_confidence_index, color=interview_adhd)) + geom_point()
+mini
+```
+
+
+In general, it looks like clinicians' assessments were pretty consistent with detecting ADHD and in ruling out ADHD. The bottom left corner (low CPT-II confidence index, low self-rated ADHD) is mostly red, while the top right corner (high CPT-II confidence index, high self-rated ADHD) is mostly green.
+
+The MINI interview can also determine whether the subject's ADHD symptoms are of the predominantly inattentive subtype.
+If we use the same plot as last time, but color the dots based on inattentive ADHD vs no ADHD, we get:
+
+```{r inattentive, echo=FALSE}
+joined_cptmini$interview_inattentive <- as.factor(joined_cptmini$interview_inattentive)
+joined_cptmini$adhd_confidence_index <- as.numeric(joined_cptmini$adhd_confidence_index)
+joined_cptmini$self_rated_adhd_wurs <- as.numeric(joined_cptmini$self_rated_adhd_wurs)
+
+inattv <- ggplot(joined_cptmini, aes(x=self_rated_adhd_wurs, y=adhd_confidence_index, color=interview_inattentive)) + geom_point()
+inattv
+```
+
+It doesn't look like there's much of a pattern.
+
+Finally, let's try looking more closely at certain parts of the test. The authors of the CPT-II test suggested that certain measures in the test were most related to the inattentiveness subdomain of ADHD. They are: detectability, omissions (missed_targets), commissions (incorrect_nontarget), hit reaction time (hit_rxn_speed), hit reaction time standard deviation (hit_rxn_speed_consistency), and variability (variability_consistency). These are expressed in the data as T-scores. 
+
+![T-Scores] (https://assess-1c314.kxcdn.com/wp-content/webp-express/webp-images/uploads/2021/11/T-scores-e1696930130676.png.webp)
+
+```{r inattentivecombo, echo=FALSE}
+joined_cptmini$interview_inattentive <- as.factor(joined_cptmini$interview_inattentive)
+
+joined_cptmini$detectability <- as.numeric(joined_cptmini$detectability)
+
+joined_cptmini$missed_targets <- as.numeric(joined_cptmini$missed_targets)
+
+joined_cptmini$incorrect_nontarget <- as.numeric(joined_cptmini$incorrect_nontarget)
+
+joined_cptmini$variability_consistency <- as.numeric(joined_cptmini$variability_consistency)
+
+detectab1 <- ggplot(joined_cptmini, aes(x=hit_rxn_speed, y=adhd_confidence_index, color=detectability, shape=interview_inattentive)) + geom_point() 
+
+detectab1 + scale_color_gradient(low="red", high="green") 
+
+
+omission1 <- ggplot(joined_cptmini, aes(x=hit_rxn_speed, y=adhd_confidence_index, color=missed_targets, shape=interview_inattentive)) + geom_point() 
+
+omission1 + scale_color_gradient(low="red", high="green") 
+
+nontarget1 <- ggplot(joined_cptmini, aes(x=hit_rxn_speed, y=adhd_confidence_index, color=incorrect_nontarget, shape=interview_inattentive)) + geom_point() 
+
+nontarget1 + scale_color_gradient(low="red", high="green") 
+
+varicons1 <- ggplot(joined_cptmini, aes(x=hit_rxn_speed, y=adhd_confidence_index, color=variability_consistency, shape=interview_inattentive)) + geom_point() 
+
+varicons1 + scale_color_gradient(low="red", high="green") 
+```
+
+The plot that doesn't quite look right is the omissions/missed targets plot. IDs 15, 94, 100, 101 had some T-values that were extremely high. To take those out, we'll make a new dataframe first, and then plot the same variables.
+
+```{r omissions, echo=FALSE}
+
+joined_cptmini_omisedit <- joined_cptmini[-c(12,87,93,94),]
+
+joined_cptmini_omisedit$interview_inattentive <- as.factor(joined_cptmini_omisedit$interview_inattentive)
+
+joined_cptmini_omisedit$missed_targets <- as.numeric(joined_cptmini_omisedit$missed_targets)
+
+omission2 <- ggplot(joined_cptmini_omisedit, aes(x=hit_rxn_speed, y=adhd_confidence_index, color=missed_targets, shape=interview_inattentive)) + geom_point() 
+
+omission2 + scale_color_gradient(low="red", high="green") 
+
+```
+
+# Conclusion
+
+The Conners' Continuous Performance Test and the trained clinicians' MINI interview are two different ways of assessing someone's ADHD status. The MINI interview more closely aligns with the subjects' self-reported ADHD rating than the CPT-II assessment aligns with the self-reported ADHD rating.
