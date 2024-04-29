@@ -205,3 +205,5 @@ ORDER BY ID;
 -- I tried to group the columns together carefully and rename them so they make a little more sense.
 
 -- Download this csv file and then upload it into RStudio. Make sure that when you are importing it into RStudio, set the NA string to "NULL."
+
+-- To view the data visualization that I completed in RStudio, download the file: https://github.com/burn-all-the-files/get-out-your-map/blob/main/radhd.docx
