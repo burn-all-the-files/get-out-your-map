@@ -1,0 +1,101 @@
+-- This SQL query is for learning purposes only. The query is almost entirely created by Josh Matlock. It has been modified slightly.
+-- His tutorial can be found here: https://www.youtube.com/watch?v=3TuayvU1kwU&t=1880s
+
+-- The data can be found here: https://synthea.mitre.org/downloads
+-- About the data: fake; synthetically generated via Synthea. Dates go up to the end of 2021.
+
+-- Goals:
+-- 1) Find total % of active patients getting Zoster shots, stratified by age, race, county, overall
+-- 2) Find running total of Zoster shots
+-- 3) Find total number of Zoster shots given
+-- 4) Provide a list of active patients that show whether or not they received Zoster shots
+
+-- Filter: Active patients should be alive, and must have had an encounter within the last five years, between 2017-2021.
+
+-- Note: Shingrix, a zoster vaccine, was approved on October 20, 2017. However, sales didn't really start until 2018.
+-- Shingrix is a two-dose series. We'll just tally patients who received at least one dose.
+-- Patients who were previously vaccinated with Zostavax were eligible to get the new Shingrix vaccine. 
+-- In 2017 and 2018, both vaccines were available for a short time, and it's hard to tell which brand was given.
+-- For the purposes of this project, we will only be looking at patients who got vaccinated between 1/2018-12/2021.
+
+-- Filter: Patients must be at least 50 years old to be eligible to receive a Shingrix Zoster Vaccine in a community pharmacy setting in Massachusetts.
+
+-- Let's start. Here's a common table expression, followed by the columns I'm looking for.
+
+with zoster_shot as
+(
+	select patient, min(date) as earliest_zoster_shot
+	from immunizations
+	where code='121' --filters for zoster vaccines
+		and date between '2018-01-01 00:00:00' and '2021-12-31 23:59:59' --filters for 2018-2022 only
+	group by patient --eliminates duplicate patientids
+)
+
+select pat.birthdate
+	,extract(Year FROM age('2021-12-31',pat.birthdate)) as age
+	,pat.race
+	,pat.county
+	,pat.id
+	,pat.first
+	,pat.last
+	,pat.gender
+	,zosters.earliest_zoster_shot
+	,case when zosters.patient is not null then 1 -- this helps us add up the number of zoster shots
+		else 0 -- replaces character 'null' with an integer 0
+		end as rec_zoster_shot
+from patients as pat
+left join zoster_shot as zosters
+	on pat.id = zosters.patient
+
+-- Let's look at the entire patients table again..
+
+select * from patients
+
+-- Need to filter out the dead patients.
+
+-- Let's look at the encounters table...
+
+select * from encounters
+
+-- Need to filter out patients who have not had an encounter for more than 5 years.
+-- Starting from the beginning...
+
+with active_patients as -- making two total common table expressions
+(
+	select distinct patient
+	from encounters as e
+	join patients as pat
+		on e.patient = pat.id
+	where start between '2017-01-01 00:00:00' and '2021-12-31 23:59:59' -- this filters for the active pts
+		and pat.deathdate is null -- this filters out the dead patients
+		and EXTRACT(year from age('2021-12-31',pat.birthdate)) >= 50 -- only age 50+ approved for zoster vaccine
+),
+
+zoster_shot as -- syntax: take out the 'with' because it's the second table expression
+(
+	select patient, min(date) as earliest_zoster_shot
+	from immunizations
+	where code='121'
+		and date between '2018-01-01 00:00:00' and '2021-12-31 23:59:59'
+	group by patient
+)
+
+select pat.birthdate
+	,extract(Year FROM age('2021-12-31',pat.birthdate)) as age
+	,pat.race
+	,pat.county
+	,pat.id
+	,pat.first
+	,pat.last
+	,pat.gender
+	,zosters.earliest_zoster_shot
+	,case when zosters.patient is not null then 1
+		else 0
+		end as rec_zoster_shot
+from patients as pat
+left join zoster_shot as zosters
+	on pat.id = zosters.patient
+where 1=1 -- this is just a placeholder
+	and pat.id in (select patient from active_patients) -- this is a subquery
+
+-- Citation for SyntheticMass: Jason Walonoski, Mark Kramer, Joseph Nichols, Andre Quina, Chris Moesel, Dylan Hall, Carlton Duffett, Kudakwashe Dube, Thomas Gallagher, Scott McLachlan, Synthea: An approach, method, and software mechanism for generating synthetic patients and the synthetic electronic health care record, Journal of the American Medical Informatics Association, Volume 25, Issue 3, March 2018, Pages 230–238, https://doi.org/10.1093/jamia/ocx079
