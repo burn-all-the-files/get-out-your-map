@@ -1,6 +1,8 @@
 -- This SQL query is for learning purposes only. The query is almost entirely created by Josh Matlock. It has been modified slightly.
 -- His tutorial can be found here: https://www.youtube.com/watch?v=3TuayvU1kwU&t=1880s
 
+-- For a data visualization for this project, go here: https://public.tableau.com/app/profile/benjamin.moy/viz/ZosterVaccinationRate-SyntheticData/ZosterDashboard
+
 -- The data can be found here: https://synthea.mitre.org/downloads
 -- About the data: fake; synthetically generated via Synthea. Dates go up to the end of 2021.
 
@@ -99,3 +101,4 @@ where 1=1 -- this is just a placeholder
 	and pat.id in (select patient from active_patients) -- this is a subquery
 
 -- Citation for SyntheticMass: Jason Walonoski, Mark Kramer, Joseph Nichols, Andre Quina, Chris Moesel, Dylan Hall, Carlton Duffett, Kudakwashe Dube, Thomas Gallagher, Scott McLachlan, Synthea: An approach, method, and software mechanism for generating synthetic patients and the synthetic electronic health care record, Journal of the American Medical Informatics Association, Volume 25, Issue 3, March 2018, Pages 230–238, https://doi.org/10.1093/jamia/ocx079
+-- Note, this data shows that only people aged 50-55 received a zoster vaccine! I added an additional 50 shots to random patients.
