@@ -1,3 +1,6 @@
+-- Google Slides Presentation: https://docs.google.com/presentation/d/1s2FSxKii-jibbgQM40bntDp18xyhmKCVO8cl4u7ZRUM/edit?usp=sharing
+-- This project was completed for learning purposes.
+
 CREATE TABLE postgres.cms.dialysis_facility_ma (
     cms_certification_number_ccn VARCHAR(255),
     network VARCHAR(255),
