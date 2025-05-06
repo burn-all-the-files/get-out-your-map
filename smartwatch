@@ -1,5 +1,6 @@
 -- This PostgresSQL code is part of the capstone for the Google Data Analytics Professional Certificate.
 -- Business task: Are there any trends in smartwatch use that can help guide marketing strategy?
+-- Google Slides Presentation: https://docs.google.com/presentation/d/1W9N4I6z0fwtkMJR_nN8KUko9uckJqWJg/edit?usp=sharing&ouid=102788890536721091440&rtpof=true&sd=true
 -- The Dataset I analyzed was from: https://www.kaggle.com/datasets/arashnic/fitbit
 
 -- About the dataset: Two separate months' worth of data; thirty-five participants; about fifteen different categories of measurements.
@@ -137,5 +138,5 @@ SELECT
 	average_intensity
 FROM hourly_intensity
 
--- That's all. To view the Google Slides presentation, go here: https://docs.google.com/presentation/d/1bXDSLYICRJgQbqhS5tqBV1hFyaOEefy1L77Efo6nX1w/edit?usp=sharing
+-- That's all. To view the Google Slides presentation, go here: https://docs.google.com/presentation/d/1W9N4I6z0fwtkMJR_nN8KUko9uckJqWJg/edit?usp=sharing&ouid=102788890536721091440&rtpof=true&sd=true
 -- Thanks for reading!
